@@ -10,7 +10,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 # --- SETTINGS ---
 BASE_URL = "http://localhost:11434"
 MODEL = "llama3.2:3b"
-PDF_ROOT = r"D:\ML\HKA_Chatbot\Langchain-and-Ollama-main\Langchain-and-Ollama-main\08_Document_Loaders\rag-dataset"
+PDF_ROOT = r"HKA_Chatbot\Langchain-and-Ollama-main\Langchain-and-Ollama-main\08_Document_Loaders\rag-dataset"
 
 # --- LOAD AND SPLIT ALL LOCAL PDFs ---
 @st.cache_data(show_spinner=True)
