@@ -1,6 +1,3 @@
-# Youtube Streamlit Playlist
-# https://www.youtube.com/watch?v=hff2tHUzxJM&list=PLc2rvfiptPSSpZ99EnJbH5LjTJ_nOoSWW
-
 import streamlit as st
 
 from dotenv import load_dotenv # langfuse or opik
@@ -21,14 +18,17 @@ from langchain_core.output_parsers import StrOutputParser
 
 load_dotenv('./../.env')
 
+# 🔽 Create two columns: image (left), title (right)
 
-st.title("Make Your Own Chatbot")
-st.write("Chat with me! Catch me at https://youtube.com/kgptalkie")
+st.image("HKA_logo.png", width=700)  # adjust path and size
+st.title("HKA AI Chatbot")
 
 base_url = "http://localhost:11434"
+
+
 model = 'llama3.2:3b'
 
-user_id = st.text_input("Enter your user id", "laxmikant")
+user_id = st.text_input("Enter your user id", "Devi Dayal")
 
 def get_session_history(session_id):
     return SQLChatMessageHistory(session_id, "sqlite:///chat_history.db")
@@ -79,7 +79,7 @@ if prompt:
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant",avatar="HKA_LOGO_ASS.PNG"):
         response = st.write_stream(chat_with_llm(user_id, prompt))
 
     st.session_state.chat_history.append({'role': 'assistant', 'content': response})
