@@ -1,3 +1,4 @@
+import subprocess
 import streamlit as st
 from dotenv import load_dotenv
 import os
@@ -36,19 +37,32 @@ context = format_docs(docs)
 
 # ---- Model Selection ----
 BASE_URL = "http://localhost:11434"
-AVAILABLE_MODELS = [
-    "llama3.2:3b",
-    "llama3.2:1b",
-    "Sheldon:latest",
-    "deepseek-r1:1.5b"
-]
-selected_model = st.sidebar.selectbox("Select LLM Model:", AVAILABLE_MODELS)
+def get_local_ollama_models():
+    try:
+        result = subprocess.run(["ollama", "list"], capture_output=True, text=True, check=True)
+        models = []
+        lines = result.stdout.strip().splitlines()[1:]  # Skip the header
+        for line in lines:
+            name = line.split()[0]
+            models.append(name)
+        return models
+    except subprocess.CalledProcessError as e:
+        st.error(f"Could not fetch model list: {e}")
+        return []
+AVAILABLE_MODELS = get_local_ollama_models()
+
+# Set default model to "llama3.2:1b" if available
+default_model = "llama3.2:1b"
+default_index = AVAILABLE_MODELS.index(default_model) if default_model in AVAILABLE_MODELS else 0
+
+selected_model = st.sidebar.selectbox("Select LLM Model:", AVAILABLE_MODELS, index=default_index)
 llm = ChatOllama(base_url=BASE_URL, model=selected_model)
+
 
 # ---- Streamlit UI ----
 
 
-st.image(r"D:\ML\HKA_Chatbot\Langchain-and-Ollama-main\Langchain-and-Ollama-main\08_Document_Loaders\scripts\HKA_LOGO.png", width=600)
+st.image(r"D:\ML\HKA_Chatbot\Langchain-and-Ollama-main\Langchain-and-Ollama-main\08_Document_Loaders\scripts\HKA_LOGO.png", width=700)
 st.title("PDF Chatbot: Select Project & Word Limit")
 
 project = st.sidebar.radio(
