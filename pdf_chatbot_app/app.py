@@ -82,7 +82,8 @@ else:
     llm = ChatOllama(base_url=BASE_URL, model=selected_model)
 
 # ---- Streamlit UI ----
-st.image(r"D:\ML\HKA_Chatbot\pdf_chatbot_app\scripts\HKA_LOGO.png", width=700)
+logo_path = os.path.join("scripts", "HKA_LOGO.png")
+st.image(logo_path, width=700)
 st.title("PDF Chatbot: Select Project & Word Limit")
 
 project = st.sidebar.radio(
