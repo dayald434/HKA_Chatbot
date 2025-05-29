@@ -12,6 +12,7 @@ from langchain_core.prompts import (
 )
 from langchain_core.output_parsers import StrOutputParser
 
+<<<<<<< HEAD
 # ---- Load PDFs ----
 PDF_ROOT = "D:/ML/HKA_Chatbot/Langchain-and-Ollama-main/Langchain-and-Ollama-main/08_Document_Loaders/rag-dataset"
 pdfs = []
@@ -19,6 +20,12 @@ for root, dirs, files in os.walk(PDF_ROOT):
     for file in files:
         if file.endswith(".pdf"):
             pdfs.append(os.path.join(root, file))
+=======
+# --- SETTINGS ---
+BASE_URL = "http://localhost:11434"
+MODEL = "llama3.2:3b"
+PDF_ROOT = r"HKA_Chatbot\Langchain-and-Ollama-main\Langchain-and-Ollama-main\08_Document_Loaders\rag-dataset"
+>>>>>>> 5aa87889ac794e815ab5a0f3c6f87138243f4587
 
 docs = []
 for pdf in pdfs:
