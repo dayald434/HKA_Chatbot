@@ -4,8 +4,8 @@ import shutil
 from dotenv import load_dotenv
 import os
 
-# Load environment variables
-load_dotenv('./../.env')
+# Load environment variables from .env (portable)
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_ollama import ChatOllama
@@ -15,7 +15,7 @@ from langchain_core.prompts import (
 from langchain_core.output_parsers import StrOutputParser
 
 # ---- Load PDFs ----
-PDF_ROOT = "D:/ML/HKA_Chatbot/Langchain-and-Ollama-main/Langchain-and-Ollama-main/08_Document_Loaders/rag-dataset"
+PDF_ROOT = "D:/ML/HKA_Chatbot/pdf_chatbot_app/rag-dataset"
 pdfs = []
 for root, dirs, files in os.walk(PDF_ROOT):
     for file in files:
@@ -32,7 +32,10 @@ for pdf in pdfs:
         st.warning(f"Failed to load {pdf}: {e}")
 
 def format_docs(docs):
-    return "\n\n".join([x.page_content for x in docs])
+    return "\n\n".join(
+        f"(Page {doc.metadata.get('page', 'N/A')})\n{doc.page_content}"
+        for doc in docs
+    )
 
 context = format_docs(docs)
 
@@ -46,18 +49,20 @@ def get_local_ollama_models():
     try:
         result = subprocess.run(["ollama", "list"], capture_output=True, text=True, check=True)
         models = []
-        lines = result.stdout.strip().splitlines()[1:]  # Skip header
-        for line in lines:
-            name = line.split()[0]
-            models.append(name)
-        return models
-    except subprocess.CalledProcessError as e:
-        st.error(f"Could not fetch model list: {e}")
+        lines = result.stdout.strip().splitlines()
+        if len(lines) <= 1:
+            return ["offline-model"]
+        for line in lines[1:]:  # Skip header
+            if line.strip():
+                name = line.split()[0]
+                models.append(name)
+        return models or ["offline-model"]
+    except Exception as e:
+        st.error(f"⚠️ Could not fetch model list: {e}")
         return ["offline-model"]
 
 AVAILABLE_MODELS = get_local_ollama_models()
 
-# Default model
 default_model = "llama3.2:1b"
 default_index = 0
 if default_model in AVAILABLE_MODELS:
@@ -66,13 +71,13 @@ if default_model in AVAILABLE_MODELS:
 selected_model = st.sidebar.selectbox("Select LLM Model:", AVAILABLE_MODELS, index=default_index)
 
 if selected_model == "offline-model":
-    st.error("⚠️ No model available. Please install and run Ollama locally.")
+    st.sidebar.warning("Ollama not available. PDF chatbot will not function until it's installed and running.")
     llm = None
 else:
     llm = ChatOllama(base_url=BASE_URL, model=selected_model)
 
 # ---- Streamlit UI ----
-st.image(r"D:\ML\HKA_Chatbot\Langchain-and-Ollama-main\Langchain-and-Ollama-main\08_Document_Loaders\scripts\HKA_LOGO.png", width=700)
+st.image(r"D:\ML\HKA_Chatbot\pdf_chatbot_app\scripts\HKA_LOGO.png", width=700)
 st.title("PDF Chatbot: Select Project & Word Limit")
 
 project = st.sidebar.radio(
