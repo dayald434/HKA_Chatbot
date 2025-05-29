@@ -43,23 +43,17 @@ context = format_docs(docs)
 BASE_URL = "http://localhost:11434"
 
 def get_local_ollama_models():
-    if shutil.which("ollama") is None:
-        st.warning("⚠️ Ollama is not installed or not in PATH. Defaulting to offline mode.")
-        return ["offline-model"]
     try:
         result = subprocess.run(["ollama", "list"], capture_output=True, text=True, check=True)
         models = []
-        lines = result.stdout.strip().splitlines()
-        if len(lines) <= 1:
-            return ["offline-model"]
-        for line in lines[1:]:  # Skip header
-            if line.strip():
-                name = line.split()[0]
-                models.append(name)
-        return models or ["offline-model"]
-    except Exception as e:
-        st.error(f"⚠️ Could not fetch model list: {e}")
-        return ["offline-model"]
+        lines = result.stdout.strip().splitlines()[1:]  # Skip header
+        for line in lines:
+            name = line.split()[0]
+            models.append(name)
+        return models
+    except subprocess.CalledProcessError as e:
+        st.error(f"Could not fetch local models: {e}")
+        return []
 
 AVAILABLE_MODELS = get_local_ollama_models()
 
