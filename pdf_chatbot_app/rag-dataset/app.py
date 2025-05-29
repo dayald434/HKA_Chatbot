@@ -15,7 +15,7 @@ from langchain_core.prompts import (
 from langchain_core.output_parsers import StrOutputParser
 
 # ---- Load PDFs ----
-PDF_ROOT = "D:/ML/HKA_Chatbot/pdf_chatbot_app/rag-dataset"
+PDF_ROOT = "pdf_chatbot_app/rag-dataset"
 pdfs = []
 for root, dirs, files in os.walk(PDF_ROOT):
     for file in files:
