@@ -55,7 +55,18 @@ def get_local_ollama_models():
         st.error(f"Could not fetch local models: {e}")
         return []
 
-AVAILABLE_MODELS = get_local_ollama_models()
+try:
+    AVAILABLE_MODELS = get_local_ollama_models()
+    if not AVAILABLE_MODELS:
+        raise ValueError("Empty list returned from Ollama.")
+except (FileNotFoundError, ValueError):
+    AVAILABLE_MODELS = [
+        "llama3.2:1b",
+        "llama3.2:3b",
+        "deepseek-coder:latest",
+        "qwen2-math:1.5b"
+    ]
+    st.sidebar.warning("Ollama is not available or failed to return models. Using default model list.")
 
 default_model = "llama3.2:1b"
 default_index = 0
