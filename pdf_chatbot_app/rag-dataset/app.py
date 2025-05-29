@@ -82,8 +82,16 @@ else:
     llm = ChatOllama(base_url=BASE_URL, model=selected_model)
 
 # ---- Streamlit UI ----
-logo_path = os.path.join("D:/ML/HKA_Chatbot/pdf_chatbot_app/rag-dataset/HKA_LOGO.png")
-st.image(logo_path, width=700)
+import os
+import streamlit as st
+
+# ---- Streamlit UI ----
+logo_path = os.path.join(os.path.dirname(__file__), "HKA_LOGO.png")
+if os.path.exists(logo_path):
+    st.image(logo_path, width=700)
+else:
+    st.warning(f"Logo not found at {logo_path}")
+
 st.title("PDF Chatbot: Select Project & Word Limit")
 
 project = st.sidebar.radio(
