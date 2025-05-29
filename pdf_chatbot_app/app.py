@@ -1,9 +1,10 @@
 import subprocess
 import streamlit as st
+import shutil
 from dotenv import load_dotenv
 import os
 
-# Load .env file for environment variables (like API keys if needed)
+# Load environment variables
 load_dotenv('./../.env')
 
 from langchain_community.document_loaders import PyMuPDFLoader
@@ -37,31 +38,40 @@ context = format_docs(docs)
 
 # ---- Model Selection ----
 BASE_URL = "http://localhost:11434"
+
 def get_local_ollama_models():
+    if shutil.which("ollama") is None:
+        st.warning("⚠️ Ollama is not installed or not in PATH. Defaulting to offline mode.")
+        return ["offline-model"]
     try:
         result = subprocess.run(["ollama", "list"], capture_output=True, text=True, check=True)
         models = []
-        lines = result.stdout.strip().splitlines()[1:]  # Skip the header
+        lines = result.stdout.strip().splitlines()[1:]  # Skip header
         for line in lines:
             name = line.split()[0]
             models.append(name)
         return models
     except subprocess.CalledProcessError as e:
         st.error(f"Could not fetch model list: {e}")
-        return []
+        return ["offline-model"]
+
 AVAILABLE_MODELS = get_local_ollama_models()
 
-# Set default model to "llama3.2:1b" if available
+# Default model
 default_model = "llama3.2:1b"
-default_index = AVAILABLE_MODELS.index(default_model) if default_model in AVAILABLE_MODELS else 0
+default_index = 0
+if default_model in AVAILABLE_MODELS:
+    default_index = AVAILABLE_MODELS.index(default_model)
 
 selected_model = st.sidebar.selectbox("Select LLM Model:", AVAILABLE_MODELS, index=default_index)
-llm = ChatOllama(base_url=BASE_URL, model=selected_model)
 
+if selected_model == "offline-model":
+    st.error("⚠️ No model available. Please install and run Ollama locally.")
+    llm = None
+else:
+    llm = ChatOllama(base_url=BASE_URL, model=selected_model)
 
 # ---- Streamlit UI ----
-
-
 st.image(r"D:\ML\HKA_Chatbot\Langchain-and-Ollama-main\Langchain-and-Ollama-main\08_Document_Loaders\scripts\HKA_LOGO.png", width=700)
 st.title("PDF Chatbot: Select Project & Word Limit")
 
@@ -73,18 +83,16 @@ project = st.sidebar.radio(
         "Report Generation from PDF"
     ]
 )
-words = st.sidebar.slider(
-    "Number of words (approx.)", 
-    min_value=20, max_value=2000, value=100, step=10
-)
+words = st.sidebar.slider("Number of words (approx.)", min_value=20, max_value=2000, value=100, step=10)
 
 # ---- Project Logic ----
-
 if project == "Question Answering from PDF":
     st.header("Ask a Question about the PDF(s)")
     user_question = st.text_input("Enter your question:")
-    if not context.strip():
-        st.error("No text found in the loaded PDFs! Please check your PDF folder and try again.")
+    if not llm:
+        st.error("No model available. Please install and run Ollama.")
+    elif not context.strip():
+        st.error("No text found in the loaded PDFs! Please check your PDF folder.")
     elif user_question:
         system = SystemMessagePromptTemplate.from_template(
             "You are a helpful AI assistant who answers user questions based on the provided context. Do not answer in more than {words} words."
@@ -98,8 +106,7 @@ if project == "Question Answering from PDF":
 
         ### Answer:"""
         prompt = HumanMessagePromptTemplate.from_template(prompt)
-        messages = [system, prompt]
-        template = ChatPromptTemplate(messages)
+        template = ChatPromptTemplate(messages=[system, prompt])
         qna_chain = template | llm | StrOutputParser()
         if st.button("Get Answer"):
             with st.spinner("Thinking..."):
@@ -109,8 +116,10 @@ if project == "Question Answering from PDF":
 
 elif project == "PDF Document Summarization":
     st.header("Summarize the PDF(s)")
-    if not context.strip():
-        st.error("No text found in the loaded PDFs! Please check your PDF folder and try again.")
+    if not llm:
+        st.error("No model available. Please install and run Ollama.")
+    elif not context.strip():
+        st.error("No text found in the loaded PDFs! Please check your PDF folder.")
     else:
         system = SystemMessagePromptTemplate.from_template(
             "You are helpful AI assistant who works as document summarizer. You must not hallucinate or provide any false information."
@@ -121,8 +130,7 @@ elif project == "PDF Document Summarization":
 
         ### Summary:"""
         prompt = HumanMessagePromptTemplate.from_template(prompt)
-        messages = [system, prompt]
-        template = ChatPromptTemplate(messages)
+        template = ChatPromptTemplate(messages=[system, prompt])
         summary_chain = template | llm | StrOutputParser()
         if st.button("Summarize PDF(s)"):
             with st.spinner("Summarizing..."):
@@ -132,8 +140,10 @@ elif project == "PDF Document Summarization":
 
 elif project == "Report Generation from PDF":
     st.header("Generate a Detailed Report from PDF(s)")
-    if not context.strip():
-        st.error("No text found in the loaded PDFs! Please check your PDF folder and try again.")
+    if not llm:
+        st.error("No model available. Please install and run Ollama.")
+    elif not context.strip():
+        st.error("No text found in the loaded PDFs! Please check your PDF folder.")
     else:
         system = SystemMessagePromptTemplate.from_template(
             "You are helpful AI assistant who generates detailed reports in Markdown from the provided context. Be accurate and detailed."
@@ -144,24 +154,19 @@ elif project == "Report Generation from PDF":
 
         ### Report (max {words} words):"""
         prompt = HumanMessagePromptTemplate.from_template(prompt)
-        messages = [system, prompt]
-        template = ChatPromptTemplate(messages)
+        template = ChatPromptTemplate(messages=[system, prompt])
         report_chain = template | llm | StrOutputParser()
         if st.button("Generate Report"):
             with st.spinner("Generating report..."):
-                response = report_chain.invoke({
-                    'context': context,
-                    'words': words,
-                })
+                response = report_chain.invoke({'context': context, 'words': words})
             st.markdown("**Report:**")
             st.markdown(response)
 
-# Optional: Show loaded PDFs
+# ---- Optional Debug Info ----
 with st.expander("Show loaded PDF files"):
     for pdf in pdfs:
         st.write(pdf)
 
-# Optional: Show context stats for debugging
 with st.expander("Show context debug info"):
     st.write(f"Number of doc chunks: {len(docs)}")
     st.write(f"Total context length: {len(context)} characters")
