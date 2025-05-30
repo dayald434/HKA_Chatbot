@@ -63,7 +63,7 @@ llm = ChatOllama(base_url=BASE_URL, model=selected_model)
 
 
 st.image(r"D:\ML\HKA_Chatbot\Langchain-and-Ollama-main\Langchain-and-Ollama-main\08_Document_Loaders\scripts\HKA_LOGO.png", width=700)
-st.title("PDF Chatbot: Select Project & Word Limit")
+st.title("PDF Chatbot: Potential Interactions between Plant-based Compounds and Traditional Medications")
 
 project = st.sidebar.radio(
     "Choose a project:",
