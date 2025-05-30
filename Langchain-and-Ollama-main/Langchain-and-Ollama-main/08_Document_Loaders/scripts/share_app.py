@@ -34,8 +34,11 @@ loader = WebBaseLoader(web_paths=urls)
 docs = []
 
 def load_data():
-    for doc in loader.load():
-        docs.append(doc)
+    try:
+        return loader.load()
+    except Exception as e:
+        st.error(f"❌ Failed to load news: {e}")
+        return []
 
 def format_docs(docs):
     raw = "\n\n".join([x.page_content for x in docs])
@@ -57,14 +60,22 @@ word_limit = st.sidebar.slider("Select Response Word Limit", min_value=50, max_v
 # --- Sidebar: New Conversation Button ---
 if st.sidebar.button("🔄 Start New Conversation"):
     st.session_state.messages = []
-    st.rerun()  # updated from st.experimental_rerun()
+    st.rerun()
 
 # --- Chat state ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- Initialize LLM with selected model and streaming ---
-llm = ChatOllama(model=selected_model, streaming=True)
+# --- LLM setup with remote base_url ---
+base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+llm = ChatOllama(model=selected_model, streaming=True, base_url=base_url)
+
+# --- Health check ---
+try:
+    _ = llm.invoke("test")
+except Exception as e:
+    st.error(f"❌ LLM backend is unreachable: {e}")
+    st.stop()
 
 # --- Prompt setup with word limit ---
 system = SystemMessagePromptTemplate.from_template(
@@ -79,22 +90,23 @@ chain = chat_prompt | llm | StrOutputParser()
 # --- Chat input ---
 user_query = st.chat_input("Ask a market-related question...")
 
-# --- Render history ---
+# --- Render chat history ---
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# --- Handle new query ---
+# --- Handle user input ---
 if user_query:
     st.chat_message("user").markdown(user_query)
     st.session_state.messages.append({"role": "user", "content": user_query})
 
     if not docs:
         with st.spinner("📰 Fetching latest news..."):
-            load_data()
-    context = format_docs(docs)
+            docs = load_data()
 
-    with st.chat_message("assistant"):
+    context = format_docs(docs) if docs else "No financial context available right now."
+
+    with st.chat_message("assistant", avatar="HKA_LOGO_ASS.PNG"):
         try:
             stream = chain.stream({
                 "context": context,
@@ -104,4 +116,4 @@ if user_query:
             response = st.write_stream(stream)
             st.session_state.messages.append({"role": "assistant", "content": response})
         except Exception as e:
-            st.error(f"❌ Error: {e}")
+            st.error(f"❌ Error during response generation: {e}")
