@@ -10,7 +10,7 @@ from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTempla
 from langchain_core.output_parsers import StrOutputParser
 
 # --- Load environment variables ---
-load_dotenv('./../.env')
+load_dotenv('D:/ML/HKA_Chatbot/Langchain-and-Ollama-main/Langchain-and-Ollama-main/08_Document_Loaders/.env')
 
 # --- Available local models ---
 AVAILABLE_MODELS = [
